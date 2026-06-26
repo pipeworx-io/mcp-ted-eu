@@ -1,6 +1,6 @@
 {
   "name": "@pipeworx/mcp-ted-eu",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "TED MCP — Tenders Electronic Daily (EU public procurement)",
   "type": "module",
   "main": "src/index.ts",

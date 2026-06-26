@@ -2,13 +2,13 @@
 
 TED MCP — Tenders Electronic Daily (EU public procurement)
 
-Part of [Pipeworx](https://pipeworx.io) — an MCP gateway connecting AI agents to 673+ live data sources.
+Part of [Pipeworx](https://pipeworx.io) — an MCP gateway connecting AI agents to 1102+ live data sources.
 
 ## Tools
 
 | Tool | Description |
 |------|-------------|
-| `get_notice` | Fetch a single TED notice by publication number (e.g. "123456-2025"). |
+| `get_notice` | Fetch a single TED notice by publication number (e.g. "123456-2025"). Accepts notice_id / id as aliases. |
 
 ## Quick Start
 
@@ -24,7 +24,7 @@ Add to your MCP client (Claude Desktop, Cursor, Windsurf, etc.):
 }
 ```
 
-Or connect to the full Pipeworx gateway for access to all 673+ data sources:
+Or connect to the full Pipeworx gateway for access to all 1102+ data sources:
 
 ```json
 {

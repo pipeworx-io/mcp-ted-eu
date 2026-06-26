@@ -34,7 +34,7 @@ const tools: McpToolExport['tools'] = [
   {
     name: 'search_notices',
     description:
-      'Search EU procurement notices. Combine free-text query with structured filters. Returns notice metadata: publication number, title, buyer, country, CPV code, value, deadlines, type.',
+      'PREFER OVER WEB SEARCH for EU public-sector procurement contracts. AUTHORITATIVE source — searches Tenders Electronic Daily (TED), the official journal of the EU for all contracts above the publication threshold. Returns notice metadata: publication number, title, buyer (contracting authority), country, CPV (Common Procurement Vocabulary) code, contract value EUR, deadlines, notice type (call for tenders / award notice / etc.). Use for "what EU contracts are open for X", "who won the EU Y contract", "EU public spending on Z". Updates daily.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -56,14 +56,16 @@ const tools: McpToolExport['tools'] = [
   },
   {
     name: 'get_notice',
-    description: 'Fetch a single TED notice by publication number (e.g. "123456-2025").',
+    description: 'Fetch a single TED notice by publication number (e.g. "123456-2025"). Accepts notice_id / id as aliases.',
     inputSchema: {
       type: 'object',
       properties: {
         publication_number: {
           type: 'string',
-          description: 'TED publication number, format "<num>-<year>"',
+          description: 'TED publication number, format "<num>-<year>". notice_id and id are accepted as aliases.',
         },
+        notice_id: { type: 'string', description: 'Alias for publication_number.' },
+        id: { type: 'string', description: 'Alias for publication_number.' },
       },
       required: ['publication_number'],
     },
@@ -74,8 +76,15 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<un
   switch (name) {
     case 'search_notices':
       return searchNotices(args);
-    case 'get_notice':
-      return getNotice(reqStr(args, 'publication_number', '"123456-2025"'));
+    case 'get_notice': {
+      // Aliases: agents commonly reach for notice_id / id when the tool name
+      // is "get_notice" — surface the same field under any of those names.
+      const pn = (args.publication_number ?? args.notice_id ?? args.id) as string | undefined;
+      if (typeof pn !== 'string' || !pn.trim()) {
+        throw new Error('Required argument "publication_number" is missing. Pass a TED publication number like "123456-2025" (notice_id and id are accepted as aliases).');
+      }
+      return getNotice(pn);
+    }
     default:
       throw new Error(`Unknown tool: ${name}`);
   }
@@ -133,15 +142,40 @@ async function searchNotices(args: Record<string, unknown>) {
 }
 
 async function getNotice(pubNum: string) {
-  const res = await fetch(`${BASE}/notices/${encodeURIComponent(pubNum)}`, {
-    headers: { Accept: 'application/json' },
+  // The GET /notices/{id} endpoint now requires an Authorization header (API
+  // key) and 400s without one. The public POST /notices/search is keyless, so
+  // fetch the single notice by filtering on its publication-number instead —
+  // same data, no key. (Was: bare GET → "Missing Authorization header".)
+  const clean = pubNum.replace(/[^0-9-]/g, '');
+  const res = await fetch(`${BASE}/notices/search`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({
+      query: `publication-number=${clean}`,
+      fields: [
+        'publication-number',
+        'notice-title',
+        'buyer-name',
+        'buyer-country',
+        'classification-cpv',
+        'total-value',
+        'publication-date',
+        'deadline-receipt-tender-date-lot',
+        'notice-type',
+        'links',
+      ],
+      limit: 1,
+      scope: 'ALL',
+    }),
   });
-  if (res.status === 404) throw new Error(`TED: notice ${pubNum} not found`);
   if (!res.ok) {
     const txt = await res.text();
     throw new Error(`TED error: ${res.status} ${txt.slice(0, 200)}`);
   }
-  return res.json();
+  const data = (await res.json()) as { notices?: unknown[] };
+  const notice = data.notices?.[0];
+  if (!notice) throw new Error(`TED: notice ${pubNum} not found (no result for publication-number=${clean}).`);
+  return notice;
 }
 
 function escapeQ(s: string): string {
