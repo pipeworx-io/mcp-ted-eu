@@ -1,14 +1,19 @@
-# mcp-ted-eu
+# @pipeworx/ted-eu
 
-TED MCP — Tenders Electronic Daily (EU public procurement)
+TED (Tenders Electronic Daily) MCP — EU public procurement notices. ~700k notices / year. No auth.
 
-Part of [Pipeworx](https://pipeworx.io) — an MCP gateway connecting AI agents to 1102+ live data sources.
+Part of [Pipeworx](https://pipeworx.io) — an MCP gateway connecting AI agents to 1394+ live data sources.
 
 ## Tools
 
-| Tool | Description |
-|------|-------------|
-| `get_notice` | Fetch a single TED notice by publication number (e.g. "123456-2025"). Accepts notice_id / id as aliases. |
+- `search_notices(query, country?, cpv?, date_from?, date_to?, value_min?, value_max?, limit?, page?)`
+- `get_notice(publication_number)`
+
+## Data source
+
+`https://api.ted.europa.eu/v3/notices/search` — POST with JSON expert-query body.
+
+CPV codes are the Common Procurement Vocabulary (8-digit). Notice publication numbers look like `123456-2025`.
 
 ## Quick Start
 
@@ -24,7 +29,7 @@ Add to your MCP client (Claude Desktop, Cursor, Windsurf, etc.):
 }
 ```
 
-Or connect to the full Pipeworx gateway for access to all 1102+ data sources:
+Or connect to the full Pipeworx gateway for access to all 1394+ data sources:
 
 ```json
 {
@@ -48,7 +53,7 @@ The gateway picks the right tool and fills the arguments automatically.
 
 ## More
 
-- [All tools and guides](https://github.com/pipeworx-io/examples)
+- [Docs and guides](https://pipeworx.io/docs)
 - [pipeworx.io](https://pipeworx.io)
 
 ## License
